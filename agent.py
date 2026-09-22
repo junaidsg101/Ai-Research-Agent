@@ -1,23 +1,14 @@
 """
-agent.py (PydanticAI + OpenAI Version)
---------------------------------------
-Defines:
-  1. A free DuckDuckGo search tool.
-  2. A PydanticAI Agent with structured output enforcement.
-  3. A `run_research()` function that the Streamlit UI calls.
-
-Streamlit Cloud Safe:
-  - No local filesystem writes.
-  - Pure Python dependencies (no system-level C-builds).
-  - API keys passed via function arguments (no .env required).
+agent.py (PydanticAI + OpenAI Version - Streamlit Cloud Safe)
+-------------------------------------------------------------
+Uses environment variable injection to bypass internal pydantic-ai import errors.
 """
 
+import os
 import time
 from typing import List
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
-# Correct PyPI package import for Streamlit Cloud
 from duckduckgo_search import DDGS
 import openai
 
@@ -110,11 +101,9 @@ def run_research(
     Builds a PydanticAI agent, runs it, and returns the final Markdown report.
     """
 
-    # 1. Initialize the OpenAI Model
-    model = OpenAIModel(
-        model_name="gpt-4o",  # You can also use "gpt-4o-mini" for faster/cheaper runs
-        api_key=api_key
-    )
+    # FIX: Inject the API key into the environment so pydantic-ai can find it 
+    # without needing to import the internal OpenAIModel class.
+    os.environ["OPENAI_API_KEY"] = api_key
 
     # 2. Build the System Prompt
     system_prompt = f"""
@@ -135,9 +124,10 @@ def run_research(
         Ensure these specific requirements are met in your 'sections' output.
         """
 
-    # 3. Initialize the PydanticAI Agent
+    # 3. Initialize the PydanticAI Agent using the string model name
+    # This completely bypasses the `from pydantic_ai.models.openai import OpenAIModel` error.
     agent = Agent(
-        model,
+        'openai:gpt-4o',  # String initialization is universally supported
         system_prompt=system_prompt,
         tools=[duckduckgo_search],
         result_type=ResearchReport,  # Forces the LLM to output valid JSON matching our schema
