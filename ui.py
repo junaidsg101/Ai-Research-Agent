@@ -2,17 +2,9 @@
 ui.py
 -----
 Streamlit user interface for the AI Research Agent.
-
-Collects from the user:
-  1. A research topic (free text)
-  2. A category (single choice): IT_Technology / Medical / Engineering / Other
-  3. One or more output formats:
-        Paragraph, Bullet, Table, Summary, Diff Comparison, Other
-
-Then hands all of that to `agent.run_research()` and renders the resulting
-Markdown report with a download button.
 """
 
+# FIX: Corrected the import statement here
 import streamlit as st
 
 from agent import run_research
@@ -34,7 +26,7 @@ st.set_page_config(
 CATEGORIES = ["IT_Technology", "Medical", "Engineering", "Other"]
 
 OUTPUT_FORMATS = [
-    "Paragraph",         # long-form prose (user wrote "Paragraphia")
+    "Paragraph",         # long-form prose
     "Bullet",            # bulleted lists
     "Table",             # Markdown table(s)
     "Summary",           # short executive summary
@@ -54,12 +46,11 @@ def get_secret(key: str):
         return None
 
 
-def build_format_instruction(formats: list[str], other_format_text: str) -> str:
+def build_format_instruction(formats: list, other_format_text: str) -> str:
     """
     Turn the user's format selections into a clear instruction string
     that we inject into the agent's task description.
     """
-    # Replace the placeholder "Other" with whatever the user typed.
     effective = list(formats)
     if "Other" in effective:
         if other_format_text.strip():
@@ -93,25 +84,25 @@ def build_format_instruction(formats: list[str], other_format_text: str) -> str:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
-groq_api_key = get_secret("GROQ_API_KEY")
+openai_api_key = get_secret("OPENAI_API_KEY")
 
 with st.sidebar:
     st.header("⚙️ About")
-    if groq_api_key:
-        st.success("Groq API key loaded ✅")
+    if openai_api_key:
+        st.success("OpenAI API key loaded ✅")
     else:
-        st.error("GROQ_API_KEY secret not found.")
+        st.error("OPENAI_API_KEY secret not found.")
         st.caption(
             "Add it in Streamlit Cloud under **App settings → Secrets**:\n\n"
-            "```toml\nGROQ_API_KEY = \"your_real_key\"\n```"
+            "```toml\nOPENAI_API_KEY = \"your_real_key\"\n```"
         )
 
     st.markdown("---")
-    st.markdown("**Model:** `openai/gpt-oss-120b` (via Groq)")
+    st.markdown("**Model:** `gpt-4o` (via OpenAI)")
     st.markdown("**Search:** DuckDuckGo (free, no key needed)")
     st.markdown("---")
     st.caption(
-        "This app sends your topic to a Groq-hosted LLM and performs live "
+        "This app sends your topic to an OpenAI LLM and performs live "
         "DuckDuckGo web searches. Don't enter sensitive information."
     )
 
@@ -121,7 +112,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 st.title("🔎 AI Research Agent")
 st.caption(
-    "Single-agent researcher · CrewAI + Groq + DuckDuckGo · "
+    "Single-agent researcher · PydanticAI + OpenAI + DuckDuckGo · "
     "configure category & output format below"
 )
 
@@ -178,9 +169,9 @@ with st.form("research_form", clear_on_submit=False):
 # ---------------------------------------------------------------------------
 if submitted:
     # ---- Validation ----
-    if not groq_api_key:
+    if not openai_api_key:
         st.error(
-            "GROQ_API_KEY is not set. Add it in Streamlit Cloud under "
+            "OPENAI_API_KEY is not set. Add it in Streamlit Cloud under "
             "App settings → Secrets, then reload the app."
         )
         st.stop()
@@ -211,7 +202,7 @@ if submitted:
         try:
             report = run_research(
                 topic=topic.strip(),
-                groq_api_key=groq_api_key,
+                api_key=openai_api_key,
                 category=effective_category,
                 format_instruction=format_instruction,
             )

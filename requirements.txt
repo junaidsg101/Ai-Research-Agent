@@ -1,5 +1,4 @@
-crewai
-litellm
-ddgs
 streamlit
-python-dotenv
+pydantic-ai
+duckduckgo-search
+openai
